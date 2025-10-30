@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import product1 from "../assets/product1.jpg";
 import product2 from "../assets/product1.jpg";
 import product3 from "../assets/product1.jpg";
@@ -6,6 +7,7 @@ import product5 from "../assets/product1.jpg";
 
 const products = [
   {
+    id: 1,
     name: "adidas Samba OG Cloud White Core Black",
     price: 1990,
     sold: "24.3k",
@@ -13,6 +15,7 @@ const products = [
     image: product1,
   },
   {
+    id: 2,
     name: "Supreme Tiger Keychain Silver",
     price: 1399,
     sold: null,
@@ -20,6 +23,7 @@ const products = [
     image: product2,
   },
   {
+    id: 3,
     name: "New Balance 530 White Silver Navy",
     price: 1847,
     sold: "31.6k",
@@ -27,6 +31,7 @@ const products = [
     image: product3,
   },
   {
+    id: 4,
     name: "Pop Mart Mantel Clock (Hirono Shelter Series)",
     price: 199,
     sold: null,
@@ -34,6 +39,7 @@ const products = [
     image: product4,
   },
   {
+    id: 5,
     name: "On Cloudtilt 1 Pearl Ivory",
     price: 11150,
     sold: null,
@@ -43,6 +49,8 @@ const products = [
 ];
 
 export default function ProductSection() {
+  const navigate = useNavigate();
+
   return (
     <section className="bg-gray-50 py-10 px-6">
       <div className="max-w-screen-xl mx-auto">
@@ -52,7 +60,8 @@ export default function ProductSection() {
           {products.map((product, index) => (
             <div
               key={index}
-              className="bg-white rounded-xl shadow p-4 relative hover:shadow-lg transition h-full flex flex-col justify-between"
+              onClick={() => navigate(`/product/${product.id}`)}
+              className="bg-white rounded-xl shadow p-4 relative hover:shadow-lg transition h-full flex flex-col justify-between cursor-pointer"
             >
               {product.sold && (
                 <span className="absolute top-2 right-3 text-xs text-gray-400">
