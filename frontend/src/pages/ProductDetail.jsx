@@ -1,255 +1,243 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
-import { FaShoppingCart, FaHeart, FaShare, FaStar } from 'react-icons/fa';
-import product1 from '../assets/product1.jpg';
-
-// จำลองข้อมูลสินค้า (ในโปรเจคจริงจะดึงจาก API)
-const mockProducts = {
-  1: {
-    id: 1,
-    name: "adidas Samba OG Cloud White Core Black",
-    price: 1990,
-    originalPrice: 2500,
-    sold: "24.3k",
-    rating: 4.8,
-    reviews: 1234,
-    trending: true,
-    image: product1,
-    description: "รองเท้าผ้าใบคลาสสิกจาก adidas ที่ได้รับความนิยมสูงสุดในขณะนี้ ด้วยดีไซน์ที่เรียบง่ายแต่สะดุดตา เหมาะกับทุกสไตล์การแต่งกาย",
-    sizes: ['US 7', 'US 8', 'US 9', 'US 10', 'US 11'],
-    colors: ['White/Black', 'All White', 'All Black'],
-    features: [
-      'วัสดุหนังคุณภาพสูง',
-      'พื้นรองเท้ากันลื่น',
-      'น้ำหนักเบา สวมใส่สบาย',
-      'ทนทานต่อการใช้งาน'
-    ]
-  }
-};
+import { FaShoppingCart, FaMinus, FaPlus } from 'react-icons/fa';
+import api from '../services/api';
 
 export default function ProductDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { addToCart } = useCart();
-  
-  const [selectedSize, setSelectedSize] = useState('');
+  const [product, setProduct] = useState(null);
   const [selectedColor, setSelectedColor] = useState('');
+  const [selectedSize, setSelectedSize] = useState('');
   const [quantity, setQuantity] = useState(1);
-  const [showSuccess, setShowSuccess] = useState(false);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [loading, setLoading] = useState(true);
 
-  // ในโปรเจคจริงจะดึงข้อมูลจาก API ตาม id
-  const product = mockProducts[id] || mockProducts[1];
+  useEffect(() => {
+    fetchProduct();
+  }, [id]);
+
+  const fetchProduct = async () => {
+    try {
+      const data = await api.getProductById(id);
+      setProduct(data);
+      
+      // Set default selections
+      if (data.colors && data.colors.length > 0) {
+        setSelectedColor(data.colors[0]);
+      }
+      if (data.sizes && data.sizes.length > 0) {
+        setSelectedSize(data.sizes[0]);
+      }
+    } catch (error) {
+      console.error('Error fetching product:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleAddToCart = () => {
-    if (!selectedSize) {
-      alert('กรุณาเลือกไซส์');
-      return;
-    }
-    if (!selectedColor) {
-      alert('กรุณาเลือกสี');
+    if (!selectedColor || !selectedSize) {
+      alert('กรุณาเลือกสีและขนาด');
       return;
     }
 
-    addToCart({
-      ...product,
-      selectedSize,
-      selectedColor
-    }, quantity);
-
-    setShowSuccess(true);
-    setTimeout(() => setShowSuccess(false), 3000);
+    if (product) {
+      addToCart({
+        id: product.id,
+        name: product.name,
+        price: parseFloat(product.price),
+        quantity: quantity,
+        selectedColor,
+        selectedSize,
+        imageUrl: product.images && product.images.length > 0 ? product.images[0] : null,
+      });
+      alert('เพิ่มลงตะกร้าสำเร็จ!');
+    }
   };
 
-  const handleBuyNow = () => {
-    handleAddToCart();
-    setTimeout(() => navigate('/cart'), 500);
-  };
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <p className="text-gray-600">กำลังโหลดข้อมูล...</p>
+      </div>
+    );
+  }
+
+  if (!product) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-600 text-lg mb-4">ไม่พบสินค้า</p>
+          <button
+            onClick={() => navigate('/')}
+            className="bg-black text-white px-6 py-2 rounded-lg hover:bg-gray-800 transition"
+          >
+            กลับไปหน้าหลัก
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const productImages = product.images && product.images.length > 0 
+    ? product.images 
+    : ['https://via.placeholder.com/600x400?text=No+Image'];
+
+  const colors = product.colors || [];
+  const sizes = product.sizes || [];
 
   return (
-    <div className="bg-gray-50 min-h-screen py-8">
-      {/* Success Message */}
-      {showSuccess && (
-        <div className="fixed top-20 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-pulse">
-          ✓ เพิ่มสินค้าลงตะกร้าแล้ว
-        </div>
-      )}
-
-      <div className="max-w-7xl mx-auto px-4">
-        {/* Breadcrumb */}
-        <div className="text-sm text-gray-600 mb-6">
-          <span className="cursor-pointer hover:text-black" onClick={() => navigate('/')}>
-            หน้าแรก
-          </span>
-          {' > '}
-          <span className="cursor-pointer hover:text-black">สินค้า</span>
-          {' > '}
-          <span className="text-black">{product.name}</span>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Product Image */}
-          <div className="bg-white rounded-2xl p-8 shadow-lg">
-            <div className="relative">
-              {product.trending && (
-                <span className="absolute top-4 left-4 bg-red-500 text-white px-3 py-1 rounded-full text-sm font-semibold">
-                  🔥 Trending
-                </span>
-              )}
-              <img 
-                src={product.image} 
-                alt={product.name} 
-                className="w-full h-96 object-contain"
-              />
-            </div>
-            
-            {/* Thumbnail Gallery */}
-            <div className="flex gap-4 mt-6">
-              {[1, 2, 3, 4].map((_, idx) => (
-                <div key={idx} className="w-20 h-20 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-black transition">
-                  <img src={product.image} alt="" className="w-full h-full object-cover rounded-lg" />
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Product Info */}
-          <div className="space-y-6">
+    <div className="min-h-screen bg-gray-50 py-12 px-4">
+      <div className="max-w-6xl mx-auto">
+        <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 p-8">
+            {/* Product Images */}
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">{product.name}</h1>
+              {/* Main Image */}
+              <div className="mb-4">
+                <img
+                  src={productImages[selectedImageIndex]}
+                  alt={product.name}
+                  className="w-full h-96 object-contain rounded-lg bg-gray-100"
+                  onError={(e) => {
+                    e.target.src = 'https://via.placeholder.com/600x400?text=No+Image';
+                  }}
+                />
+              </div>
               
-              {/* Rating */}
-              <div className="flex items-center gap-4 mb-4">
-                <div className="flex items-center">
-                  {[...Array(5)].map((_, i) => (
-                    <FaStar key={i} className={i < Math.floor(product.rating) ? 'text-yellow-400' : 'text-gray-300'} />
+              {/* Thumbnail Images */}
+              {productImages.length > 1 && (
+                <div className="flex gap-2 overflow-x-auto">
+                  {productImages.map((img, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setSelectedImageIndex(index)}
+                      className={`flex-shrink-0 w-20 h-20 border-2 rounded-lg overflow-hidden ${
+                        selectedImageIndex === index ? 'border-purple-500' : 'border-gray-200'
+                      }`}
+                    >
+                      <img
+                        src={img}
+                        alt={`${product.name} ${index + 1}`}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.target.src = 'https://via.placeholder.com/80x80?text=No+Image';
+                        }}
+                      />
+                    </button>
                   ))}
-                  <span className="ml-2 text-gray-600">{product.rating}</span>
                 </div>
-                <span className="text-gray-500">({product.reviews} รีวิว)</span>
-                <span className="text-gray-500">ขายแล้ว {product.sold}</span>
+              )}
+            </div>
+
+            {/* Product Info */}
+            <div>
+              <h1 className="text-3xl font-bold mb-4">{product.name}</h1>
+              <p className="text-gray-600 mb-4">{product.description || 'ไม่มีคำอธิบาย'}</p>
+
+              <div className="mb-6">
+                <span className="text-4xl font-bold">฿{parseFloat(product.price || 0).toLocaleString()}</span>
               </div>
 
-              {/* Price */}
-              <div className="flex items-baseline gap-4">
-                <span className="text-4xl font-bold text-black">฿{product.price.toLocaleString()}</span>
-                {product.originalPrice && (
-                  <>
-                    <span className="text-xl text-gray-400 line-through">฿{product.originalPrice.toLocaleString()}</span>
-                    <span className="bg-red-100 text-red-600 px-3 py-1 rounded-full text-sm font-semibold">
-                      -{Math.round((1 - product.price / product.originalPrice) * 100)}%
-                    </span>
-                  </>
-                )}
+              <div className="mb-6">
+                <p className="text-sm text-gray-600 mb-2">หมวดหมู่: {product.category}</p>
+                <p className={`text-sm font-medium ${
+                  product.stock > 10 ? 'text-green-600' : 
+                  product.stock > 0 ? 'text-yellow-600' : 'text-red-600'
+                }`}>
+                  สต็อก: {product.stock > 0 ? `${product.stock} ชิ้น` : 'หมด'}
+                </p>
               </div>
-            </div>
 
-            {/* Description */}
-            <div className="border-t pt-6">
-              <h3 className="font-semibold text-lg mb-2">รายละเอียดสินค้า</h3>
-              <p className="text-gray-600 leading-relaxed">{product.description}</p>
-            </div>
+              {/* Color Selection */}
+              {colors.length > 0 && (
+                <div className="mb-6">
+                  <p className="text-sm font-medium mb-2">สี:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {colors.map((color) => (
+                      <button
+                        key={color}
+                        onClick={() => setSelectedColor(color)}
+                        className={`px-4 py-2 rounded-lg border-2 transition ${
+                          selectedColor === color
+                            ? 'border-purple-500 bg-purple-50 text-purple-700 font-semibold'
+                            : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                      >
+                        {color}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
-            {/* Features */}
-            <div className="border-t pt-6">
-              <h3 className="font-semibold text-lg mb-3">คุณสมบัติเด่น</h3>
-              <ul className="space-y-2">
-                {product.features.map((feature, idx) => (
-                  <li key={idx} className="flex items-center text-gray-600">
-                    <span className="text-green-500 mr-2">✓</span>
-                    {feature}
-                  </li>
-                ))}
-              </ul>
-            </div>
+              {/* Size Selection */}
+              {sizes.length > 0 && (
+                <div className="mb-6">
+                  <p className="text-sm font-medium mb-2">ขนาด:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {sizes.map((size) => (
+                      <button
+                        key={size}
+                        onClick={() => setSelectedSize(size)}
+                        className={`px-4 py-2 rounded-lg border-2 transition ${
+                          selectedSize === size
+                            ? 'border-purple-500 bg-purple-50 text-purple-700 font-semibold'
+                            : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                      >
+                        {size}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
-            {/* Size Selection */}
-            <div className="border-t pt-6">
-              <h3 className="font-semibold text-lg mb-3">เลือกไซส์</h3>
-              <div className="flex flex-wrap gap-3">
-                {product.sizes.map((size) => (
+              {product.stock > 0 ? (
+                <>
+                  <div className="flex items-center gap-4 mb-6">
+                    <span className="text-sm font-medium">จำนวน:</span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                        className="w-8 h-8 rounded-lg border flex items-center justify-center hover:bg-gray-100"
+                      >
+                        <FaMinus className="text-xs" />
+                      </button>
+                      <span className="w-12 text-center font-medium">{quantity}</span>
+                      <button
+                        onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
+                        className="w-8 h-8 rounded-lg border flex items-center justify-center hover:bg-gray-100"
+                      >
+                        <FaPlus className="text-xs" />
+                      </button>
+                    </div>
+                  </div>
+
                   <button
-                    key={size}
-                    onClick={() => setSelectedSize(size)}
-                    className={`px-6 py-2 border-2 rounded-lg font-medium transition ${
-                      selectedSize === size
-                        ? 'border-black bg-black text-white'
-                        : 'border-gray-300 hover:border-black'
+                    onClick={handleAddToCart}
+                    disabled={colors.length > 0 && !selectedColor || sizes.length > 0 && !selectedSize}
+                    className={`w-full py-3 rounded-lg font-semibold transition flex items-center justify-center gap-2 ${
+                      (colors.length > 0 && !selectedColor) || (sizes.length > 0 && !selectedSize)
+                        ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                        : 'bg-black text-white hover:bg-gray-800'
                     }`}
                   >
-                    {size}
+                    <FaShoppingCart />
+                    เพิ่มลงตะกร้า
                   </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Color Selection */}
-            <div>
-              <h3 className="font-semibold text-lg mb-3">เลือกสี</h3>
-              <div className="flex flex-wrap gap-3">
-                {product.colors.map((color) => (
-                  <button
-                    key={color}
-                    onClick={() => setSelectedColor(color)}
-                    className={`px-6 py-2 border-2 rounded-lg font-medium transition ${
-                      selectedColor === color
-                        ? 'border-black bg-black text-white'
-                        : 'border-gray-300 hover:border-black'
-                    }`}
-                  >
-                    {color}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Quantity */}
-            <div>
-              <h3 className="font-semibold text-lg mb-3">จำนวน</h3>
-              <div className="flex items-center gap-4">
+                </>
+              ) : (
                 <button
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="w-10 h-10 border-2 border-gray-300 rounded-lg hover:border-black transition"
+                  disabled
+                  className="w-full bg-gray-300 text-gray-600 py-3 rounded-lg font-semibold cursor-not-allowed"
                 >
-                  -
+                  สินค้าหมด
                 </button>
-                <span className="text-xl font-semibold w-12 text-center">{quantity}</span>
-                <button
-                  onClick={() => setQuantity(quantity + 1)}
-                  className="w-10 h-10 border-2 border-gray-300 rounded-lg hover:border-black transition"
-                >
-                  +
-                </button>
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex gap-4 pt-4">
-              <button
-                onClick={handleAddToCart}
-                className="flex-1 bg-white border-2 border-black text-black py-4 rounded-xl font-semibold hover:bg-gray-50 transition flex items-center justify-center gap-2"
-              >
-                <FaShoppingCart />
-                เพิ่มลงตะกร้า
-              </button>
-              <button
-                onClick={handleBuyNow}
-                className="flex-1 bg-black text-white py-4 rounded-xl font-semibold hover:bg-gray-800 transition"
-              >
-                ซื้อเลย
-              </button>
-            </div>
-
-            {/* Additional Actions */}
-            <div className="flex gap-4">
-              <button className="flex-1 border border-gray-300 py-3 rounded-lg hover:border-black transition flex items-center justify-center gap-2">
-                <FaHeart className="text-red-500" />
-                <span>บันทึก</span>
-              </button>
-              <button className="flex-1 border border-gray-300 py-3 rounded-lg hover:border-black transition flex items-center justify-center gap-2">
-                <FaShare className="text-blue-500" />
-                <span>แชร์</span>
-              </button>
+              )}
             </div>
           </div>
         </div>
@@ -257,4 +245,3 @@ export default function ProductDetail() {
     </div>
   );
 }
-

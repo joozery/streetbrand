@@ -15,6 +15,12 @@ export default function OrderSuccess() {
 
   if (!order) return null;
 
+  // Handle different API response structures
+  const orderItems = order.orderItems || order.items || [];
+  const totalAmount = order.totalAmount || order.totalPrice || order.total || 0;
+  const shippingAddress = order.shippingAddress || {};
+  const shippingInfo = shippingAddress;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center px-4 py-12">
       <div className="max-w-2xl w-full">
@@ -41,34 +47,52 @@ export default function OrderSuccess() {
           {/* Order Summary */}
           <div className="space-y-4 mb-6 pb-6 border-b">
             <h3 className="font-semibold text-lg">สรุปคำสั่งซื้อ</h3>
-            {order.items.map((item) => (
-              <div key={item.id} className="flex justify-between text-sm">
-                <span className="text-gray-600">
-                  {item.name} x {item.quantity}
-                </span>
-                <span className="font-medium">
-                  ฿{(item.price * item.quantity).toLocaleString()}
-                </span>
-              </div>
-            ))}
+            {orderItems.length > 0 ? (
+              orderItems.map((item, index) => (
+                <div key={item.id || index} className="flex justify-between text-sm">
+                  <span className="text-gray-600">
+                    {item.name || `สินค้า ${index + 1}`} x {item.quantity || 1}
+                  </span>
+                  <span className="font-medium">
+                    ฿{parseFloat((item.price || 0) * (item.quantity || 1)).toLocaleString()}
+                  </span>
+                </div>
+              ))
+            ) : (
+              <p className="text-gray-500 text-sm">ไม่พบรายการสินค้า</p>
+            )}
           </div>
 
           {/* Total */}
           <div className="flex justify-between items-center text-xl font-bold mb-6">
             <span>ยอดรวมทั้งหมด</span>
-            <span className="text-2xl">฿{order.total.toLocaleString()}</span>
+            <span className="text-2xl">฿{parseFloat(totalAmount).toLocaleString()}</span>
           </div>
 
           {/* Shipping Info */}
-          <div className="bg-gray-50 rounded-lg p-4 mb-6">
-            <h4 className="font-semibold mb-3">ข้อมูลการจัดส่ง</h4>
-            <div className="text-sm text-gray-600 space-y-1">
-              <p><strong>ชื่อผู้รับ:</strong> {order.shippingInfo.name}</p>
-              <p><strong>เบอร์โทร:</strong> {order.shippingInfo.phone}</p>
-              <p><strong>ที่อยู่:</strong> {order.shippingInfo.address}</p>
-              <p>{order.shippingInfo.city} {order.shippingInfo.postalCode}</p>
+          {shippingAddress && Object.keys(shippingAddress).length > 0 && (
+            <div className="bg-gray-50 rounded-lg p-4 mb-6">
+              <h4 className="font-semibold mb-3">ข้อมูลการจัดส่ง</h4>
+              <div className="text-sm text-gray-600 space-y-1">
+                {shippingAddress.name && (
+                  <p><strong>ชื่อผู้รับ:</strong> {shippingAddress.name}</p>
+                )}
+                {shippingAddress.phone && (
+                  <p><strong>เบอร์โทร:</strong> {shippingAddress.phone}</p>
+                )}
+                {shippingAddress.address && (
+                  <p><strong>ที่อยู่:</strong> {shippingAddress.address}</p>
+                )}
+                {(shippingAddress.district || shippingAddress.province || shippingAddress.postalCode) && (
+                  <p>
+                    {shippingAddress.district || ''} 
+                    {shippingAddress.province || ''} 
+                    {shippingAddress.postalCode || ''}
+                  </p>
+                )}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Next Steps */}
           <div className="bg-blue-50 rounded-lg p-4 mb-6">
@@ -82,9 +106,11 @@ export default function OrderSuccess() {
           </div>
 
           {/* Email Confirmation */}
-          <p className="text-center text-sm text-gray-500">
-            เราได้ส่งอีเมลยืนยันการสั่งซื้อไปยัง {order.shippingInfo.name} แล้ว
-          </p>
+          {shippingAddress?.name && (
+            <p className="text-center text-sm text-gray-500">
+              เราได้ส่งอีเมลยืนยันการสั่งซื้อไปยัง {shippingAddress.name} แล้ว
+            </p>
+          )}
         </div>
 
         {/* Action Buttons */}

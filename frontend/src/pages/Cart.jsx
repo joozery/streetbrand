@@ -55,12 +55,24 @@ export default function Cart() {
               <div key={item.id} className="bg-white rounded-xl shadow p-6">
                 <div className="flex gap-6">
                   {/* Product Image */}
-                  <div className="w-32 h-32 bg-gray-100 rounded-lg flex-shrink-0">
-                    <img
-                      src={item.image}
-                      alt={item.name}
-                      className="w-full h-full object-contain rounded-lg"
-                    />
+                  <div className="w-32 h-32 bg-gray-100 rounded-lg flex-shrink-0 flex items-center justify-center overflow-hidden">
+                    {item.imageUrl || item.image ? (
+                      <img
+                        src={item.imageUrl || item.image}
+                        alt={item.name}
+                        className="w-full h-full object-cover rounded-lg"
+                        onError={(e) => {
+                          e.target.src = 'https://via.placeholder.com/150?text=No+Image';
+                          e.target.className = 'w-full h-full object-contain rounded-lg';
+                        }}
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+                        <span className="text-white font-bold text-2xl">
+                          {item.name.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Product Info */}

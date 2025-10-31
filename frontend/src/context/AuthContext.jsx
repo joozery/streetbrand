@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import api from '../services/api';
 
 const AuthContext = createContext();
 
@@ -15,33 +16,35 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // ตรวจสอบ localStorage เมื่อ app เริ่มทำงาน
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    setLoading(false);
+    checkAuth();
   }, []);
+
+  const checkAuth = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (token) {
+        const userData = await api.getMe();
+        setUser(userData);
+      }
+    } catch (error) {
+      console.error('Auth check failed:', error);
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const register = async (userData) => {
     try {
-      // จำลองการ register (ในโปรเจคจริงจะเชื่อมกับ API)
-      const newUser = {
-        id: Date.now(),
-        email: userData.email,
-        name: userData.name,
-        phone: userData.phone,
-        createdAt: new Date().toISOString()
-      };
-
-      // บันทึก user ลง localStorage
-      const users = JSON.parse(localStorage.getItem('users') || '[]');
-      users.push(newUser);
-      localStorage.setItem('users', JSON.stringify(users));
-
-      setUser(newUser);
-      localStorage.setItem('user', JSON.stringify(newUser));
-      return { success: true, user: newUser };
+      const response = await api.register(userData);
+      if (response.token) {
+        localStorage.setItem('token', response.token);
+        localStorage.setItem('user', JSON.stringify(response));
+        setUser(response);
+        return { success: true, user: response };
+      }
+      return { success: false, error: 'Registration failed' };
     } catch (error) {
       return { success: false, error: error.message };
     }
@@ -49,17 +52,14 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      // จำลองการ login (ในโปรเจคจริงจะเชื่อมกับ API)
-      const users = JSON.parse(localStorage.getItem('users') || '[]');
-      const foundUser = users.find(u => u.email === email);
-
-      if (foundUser) {
-        setUser(foundUser);
-        localStorage.setItem('user', JSON.stringify(foundUser));
-        return { success: true, user: foundUser };
-      } else {
-        return { success: false, error: 'ไม่พบผู้ใช้งานนี้' };
+      const response = await api.login(email, password);
+      if (response.token) {
+        localStorage.setItem('token', response.token);
+        localStorage.setItem('user', JSON.stringify(response));
+        setUser(response);
+        return { success: true, user: response };
       }
+      return { success: false, error: 'Login failed' };
     } catch (error) {
       return { success: false, error: error.message };
     }
@@ -67,6 +67,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     setUser(null);
+    localStorage.removeItem('token');
     localStorage.removeItem('user');
   };
 
@@ -76,9 +77,8 @@ export const AuthProvider = ({ children }) => {
     register,
     login,
     logout,
-    isAuthenticated: !!user
+    isAuthenticated: !!user,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
-

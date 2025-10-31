@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
+import api from '../services/api';
 import { FaCreditCard, FaMapMarkerAlt, FaPhone, FaUser } from 'react-icons/fa';
 import visa from '../assets/visa.png';
 import mastercard from '../assets/mastercard.png';
@@ -58,31 +59,47 @@ export default function Payment() {
     e.preventDefault();
     setLoading(true);
 
-    // จำลองการชำระเงิน
-    setTimeout(() => {
-      // บันทึกคำสั่งซื้อ
-      const order = {
-        id: Date.now(),
-        userId: user.id,
-        items: cartItems,
-        total: getCartTotal(),
-        shippingInfo,
-        paymentMethod,
-        status: 'paid',
-        createdAt: new Date().toISOString()
+    try {
+      // สร้าง order items จาก cart
+      const orderItems = cartItems.map(item => ({
+        product: item.id,
+        name: item.name,
+        quantity: item.quantity,
+        price: item.price,
+      }));
+
+      // สร้าง shipping address
+      const shippingAddress = {
+        name: shippingInfo.name,
+        phone: shippingInfo.phone,
+        address: shippingInfo.address,
+        district: shippingInfo.city,
+        province: shippingInfo.province || '',
+        postalCode: shippingInfo.postalCode,
       };
 
-      // บันทึกลง localStorage
-      const orders = JSON.parse(localStorage.getItem('orders') || '[]');
-      orders.push(order);
-      localStorage.setItem('orders', JSON.stringify(orders));
+      // กำหนด payment method
+      let paymentMethodValue = 'บัตรเครดิต';
+      if (paymentMethod === 'promptpay') paymentMethodValue = 'พร้อมเพย์';
+      if (paymentMethod === 'banktransfer') paymentMethodValue = 'โอนธนาคาร';
+
+      // ส่งคำสั่งซื้อไปยัง API
+      const order = await api.createOrder({
+        orderItems,
+        shippingAddress,
+        paymentMethod: paymentMethodValue,
+      });
 
       // ล้างตะกร้า
       clearCart();
 
       // ไปหน้าสำเร็จ
       navigate('/order-success', { state: { order } });
-    }, 2000);
+    } catch (error) {
+      alert('เกิดข้อผิดพลาด: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const shippingCost = 0;
@@ -328,12 +345,24 @@ export default function Payment() {
                 <div className="space-y-3 mb-6 pb-6 border-b max-h-64 overflow-y-auto">
                   {cartItems.map((item) => (
                     <div key={item.id} className="flex gap-3">
-                      <div className="w-16 h-16 bg-gray-100 rounded-lg flex-shrink-0">
-                        <img
-                          src={item.image}
-                          alt={item.name}
-                          className="w-full h-full object-contain"
-                        />
+                      <div className="w-16 h-16 bg-gray-100 rounded-lg flex-shrink-0 flex items-center justify-center overflow-hidden">
+                        {item.imageUrl || item.image ? (
+                          <img
+                            src={item.imageUrl || item.image}
+                            alt={item.name}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.target.src = 'https://via.placeholder.com/150?text=No+Image';
+                              e.target.className = 'w-full h-full object-contain';
+                            }}
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+                            <span className="text-white font-bold text-lg">
+                              {item.name.charAt(0).toUpperCase()}
+                            </span>
+                          </div>
+                        )}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-gray-900 truncate">

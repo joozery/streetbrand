@@ -23,7 +23,7 @@ export default function Header() {
         className="text-xs font-bold tracking-wide cursor-pointer hover:opacity-80 transition"
         onClick={() => navigate('/')}
       >
-        SA_<br />SOM
+        DELTA-<br />SHOP
       </div>
 
       {/* Search bar */}

@@ -27,17 +27,17 @@ import {
         <div className="max-w-screen-xl mx-auto px-6 py-10 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 text-sm">
           {/* Logo / Brand */}
           <div>
-            <div className="text-2xl font-bold mb-4">SA_SOM</div>
+            <div className="text-2xl font-bold mb-4">DELTA-SHOP</div>
           </div>
   
           {/* About Section */}
           <div>
-            <h4 className="font-semibold mb-2">About SASOM</h4>
+            <h4 className="font-semibold mb-2">About DELTA-SHOP</h4>
             <ul className="space-y-1 text-gray-600">
               <li><a href="#">Buyer Manual</a></li>
               <li><a href="#">Authentication</a></li>
               <li><a href="#">Seller Manual</a></li>
-              <li><a href="#">Sasom Product Guideline</a></li>
+              <li><a href="#">DELTA-SHOP Product Guideline</a></li>
             </ul>
           </div>
   
@@ -64,7 +64,7 @@ import {
               <FaLinkedinIn />
             </div>
             <a href="#" className="text-sm text-black font-medium">
-              Sell with SASOM
+              Sell with DELTA-SHOP
             </a>
           </div>
         </div>
@@ -72,7 +72,7 @@ import {
         {/* Bottom Bar */}
         <div className="border-t text-center text-xs text-gray-500 py-4 px-4 flex flex-col md:flex-row justify-between items-center max-w-screen-xl mx-auto">
           <div className="mb-2 md:mb-0">
-            © 2025 Copyright | sasom &nbsp; | &nbsp;
+            © 2025 Copyright | DELTA-SHOP &nbsp; | &nbsp;
             <a href="#" className="hover:underline">Terms & Conditions</a> &nbsp;|&nbsp;
             <a href="#" className="hover:underline">Privacy Policy</a>
           </div>
